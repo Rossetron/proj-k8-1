@@ -1,0 +1,43 @@
+name: Build and Deploy Locally
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-load:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build docker image
+        uses: docker/build-push-action@v4
+        with:
+          context:.
+          push: false
+          load: true
+          tags: my-local-app:latest
+
+      - name: Load image into kind cluster
+        uses: anothrNick/kind-action@v1
+        with:
+          kind_version: "v0.17.0"
+          cluster_name: "kind"
+          image: my-local-app:latest
+
+  deploy:
+    needs: build-and-load
+    runs-on: arc-local-runner
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install my-app./helm-chart \
+            --namespace default \
+            --set image.repository=my-local-app \
+            --set image.tag=latest
