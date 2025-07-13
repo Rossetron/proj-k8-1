@@ -1,4 +1,5 @@
 name: Build and Deploy Locally
+
 on:
   push:
     branches: [ main ]
@@ -16,7 +17,7 @@ jobs:
       - name: Build docker image
         uses: docker/build-push-action@v4
         with:
-          context:.
+          context: .
           push: false
           load: true
           tags: my-local-app:latest
@@ -30,14 +31,15 @@ jobs:
 
   deploy:
     needs: build-and-load
-    runs-on: arc-local-runner
+    runs-on: arc-local-runner  # 🔧 Ensure this runner exists and is registered
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Deploy with Helm
         run: |
-          helm upgrade --install my-app./helm-chart \
+          helm upgrade --install my-app ./helm-chart \
             --namespace default \
             --set image.repository=my-local-app \
             --set image.tag=latest
+
